@@ -57,3 +57,4 @@ services:
 
 volumes:
   postgres_data:
+    name: vulcan-postgres_data

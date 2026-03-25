@@ -14,7 +14,7 @@ up:
 
 # Stop everything
 down:
-	docker compose down -v
+	docker compose down
 	@echo "🛑 Stopped Vulcan stack"
 
 # Follow logs
