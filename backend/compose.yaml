@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: vulcan-db
+    environment:
+      POSTGRES_DB: vulcan
+      POSTGRES_USER: vulcan_user
+      POSTGRES_PASSWORD: vulcan123
+    ports: ["5432:5432"]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+
+  backend:
+    build:
+      context: ./backend/Vulcan-backend  # Pravilna pot do tvoje Laravel!
+      dockerfile_inline: |                 # Inline Dockerfile
+        FROM php:8.3-cli-alpine
+        RUN apk add --no-cache postgresql-dev && \
+            docker-php-ext-install pdo_pgsql pgsql && \
+            curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+        WORKDIR /var/www/html
+        COPY . .
+        RUN composer install --no-interaction --optimize-autoloader
+        EXPOSE 8000
+        CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+    container_name: vulcan-backend
+    ports: ["8000:8000"]
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: vulcan
+      DB_USERNAME: vulcan_user
+      DB_PASSWORD: vulcan123
+    volumes: 
+      - ./backend/Vulcan-backend:/var/www/html:cached  # Mount notranjo mapo
+    depends_on: [db]
+
+  frontend:
+    build: ./frontend
+    container_name: vulcan-frontend
+    ports: ["5173:5173"]
+    volumes: 
+      - ./frontend:/app:cached
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+
+volumes:
+  postgres_data:

@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: vulcan-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vulcan}
+      POSTGRES_USER: ${POSTGRES_USER:-vulcan_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vulcan123}
+    ports: ["${DB_PORT:-5432}:5432"]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vulcan_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend  # Iz docker/ mape!
+    container_name: vulcan-backend
+    ports: ["${BACKEND_PORT:-8000}:8000"]
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: ${POSTGRES_DB:-vulcan}
+      DB_USERNAME: ${POSTGRES_USER:-vulcan_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-vulcan123}
+      APP_URL: http://localhost:${BACKEND_PORT:-8000}
+      SESSION_DRIVER: file
+    volumes: 
+      - ./backend:/var/www/html:cached  # Hot reload
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend  # Iz docker/ mape!
+    container_name: vulcan-frontend
+    ports: ["${FRONTEND_PORT:-5173}:5173"]
+    environment:
+      VITE_API_URL: http://localhost:${BACKEND_PORT:-8000}
+    volumes: 
+      - ./frontend:/app:cached
+      - /app/node_modules  # Docker cache
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
