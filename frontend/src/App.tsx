@@ -1,6 +1,15 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import LoginPage from './features/auth/LoginPage'
+
 function App() {
   return (
-    <h1 className="text-9xl">Hello World</h1>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/login" element={<LoginPage />} />
+        {/* Add new pages here */}
+      </Routes>
+    </Router>
   )
 }
-export default App;
+export default App
