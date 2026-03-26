@@ -1,7 +1,10 @@
 .PHONY: up down logs shell migrate seed reset build test lint clean help
 
 # Default
-all: up migrate
+all: up
+	@echo "⏳ Waiting for backend..."
+	@until docker compose exec backend php artisan migrate --force 2>/dev/null; do sleep 2; done
+	@echo "✅ Migrations complete"
 
 # Start everything (build + run)
 up:
@@ -23,7 +26,7 @@ logs:
 
 # Backend shell
 shell:
-	docker compose exec backend bash
+	docker compose exec backend sh
 
 # Frontend shell  
 frontend-shell:
