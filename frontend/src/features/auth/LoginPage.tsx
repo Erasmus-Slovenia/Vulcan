@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 
 function LoginPage() {
@@ -8,7 +7,6 @@ function LoginPage() {
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const { login } = useAuth();
-    const navigate = useNavigate();
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
@@ -17,7 +15,6 @@ function LoginPage() {
 
         try {
             await login(name, password);
-            navigate('/dashboard');
         } catch {
             setError('Invalid credentials');
         } finally {
