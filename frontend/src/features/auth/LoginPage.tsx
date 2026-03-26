@@ -11,11 +11,10 @@ function LoginPage() {
                     </div>
                     <form className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
                             <input
-                                type="email"
+                                type="text"
                                 className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-transparent transition-all duration-300"
-                                placeholder="your@email.com"
                                 required
                             />
                         </div>
@@ -42,10 +41,6 @@ function LoginPage() {
                             Sign in
                         </button>
                     </form>
-                    <p className="text-center mt-6 text-sm text-gray-400">
-                        Don't have an account?{' '}
-                        <a href="#" className="text-green-400 font-medium hover:text-green-300 transition-colors">Sign up</a>
-                    </p>
                 </div>
             </div>
         </div>
