@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Admin',
             'email' => 'admin@vulcan.com',
+            'password' => 'password',
             'role' => 'admin',
         ]);
     }
