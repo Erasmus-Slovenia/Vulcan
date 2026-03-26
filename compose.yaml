@@ -30,8 +30,9 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-vulcan123}
       APP_URL: http://localhost:${BACKEND_PORT:-8000}
       SESSION_DRIVER: file
-    volumes: 
+    volumes:
       - ./backend:/var/www/html:cached  # Hot reload
+      - /var/www/html/vendor  # Preserve composer dependencies
     depends_on:
       db:
         condition: service_healthy
