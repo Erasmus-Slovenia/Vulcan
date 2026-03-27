@@ -34,6 +34,10 @@ export async function api<T>(endpoint: string, options: RequestInit = {}): Promi
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Request failed' }));
+    if (error.errors) {
+        const messages = Object.values(error.errors).flat();
+        throw new Error(messages[0] || error.message || 'Request failed');
+    }
     throw new Error(error.message || 'Request failed');
   }
 
