@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { Link } from 'react-router-dom'
 
 interface Stats {
     activeProjects: number
@@ -25,6 +26,14 @@ function Dashboard() {
                         Vulcan
                     </h1>
                     <div className="flex items-center gap-4">
+                        {user?.role === 'admin' && (
+                            <Link
+                                to="/admin"
+                                className="text-sm bg-green-600/20 hover:bg-green-600/40 text-green-400 px-4 py-2 rounded-xl border border-green-500/30 transition-all duration-300"
+                            >
+                                Admin Panel
+                            </Link>
+                        )}
                         <span className="text-lg font-medium">
                             {user?.name} <span className="text-green-400">({user?.role})</span>
                         </span>
