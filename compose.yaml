@@ -3,13 +3,13 @@ services:
     image: postgres:16-alpine
     container_name: vulcan-db
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-vulcan}
-      POSTGRES_USER: ${POSTGRES_USER:-vulcan_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vulcan123}
-    ports: ["${DB_PORT:-5432}:5432"]
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports: ["${DB_PORT}:5432"]
     volumes: [postgres_data:/var/lib/postgresql/data]
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vulcan_user} -d ${POSTGRES_DB:-vulcan}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -18,9 +18,9 @@ services:
   backend:
     build:
       context: .
-      dockerfile: docker/Dockerfile.backend  # Iz docker/ mape!
+      dockerfile: docker/Dockerfile.backend
     container_name: vulcan-backend
-    ports: ["${BACKEND_PORT:-8000}:8000"]
+    ports: ["${BACKEND_PORT}:8000"]
     environment:
       DB_CONNECTION: pgsql
       DB_HOST: db
@@ -31,8 +31,8 @@ services:
       APP_URL: http://localhost:${BACKEND_PORT:-8000}
       SESSION_DRIVER: file
     volumes:
-      - ./backend:/var/www/html:cached  # Hot reload
-      - /var/www/html/vendor  # Preserve composer dependencies
+      - ./backend:/var/www/html:cached
+      - /var/www/html/vendor
     depends_on:
       db:
         condition: service_healthy
@@ -45,14 +45,14 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: docker/Dockerfile.frontend  # Iz docker/ mape!
+      dockerfile: docker/Dockerfile.frontend
     container_name: vulcan-frontend
-    ports: ["${FRONTEND_PORT:-5173}:5173"]
+    ports: ["${FRONTEND_PORT}:5173"]
     environment:
       VITE_API_URL: http://localhost:${BACKEND_PORT:-8000}
     volumes: 
       - ./frontend:/app:cached
-      - /app/node_modules  # Docker cache
+      - /app/node_modules
     depends_on:
       - backend
 
