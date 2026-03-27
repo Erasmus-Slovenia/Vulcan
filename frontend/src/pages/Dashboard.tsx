@@ -17,6 +17,8 @@ function Dashboard() {
         overdueTasks: 2,
         myTasks: 5
     })
+    const [, setActiveView] = useState<'dashboard' | 'projects' | 'tasks'>('dashboard')
+    const [] = useState(null)
 
     return (
         <div className="min-h-screen bg-linear-to-br from-gray-900 to-[#006633] p-8 text-white">
@@ -57,19 +59,26 @@ function Dashboard() {
                             <div className="text-2xl font-bold text-green-400">{stats.activeProjects}</div>
                             <div className="text-gray-400 text-sm mt-1">Active projects</div>
                         </div>
-                        <div className="text-center p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
-                            <div className="text-2xl font-bold text-blue-400">{stats.totalTasks}</div>
-                            <div className="text-gray-400 text-sm mt-1">Total tasks</div>
+
+                        <div
+                            onClick={() => setActiveView('tasks')}
+                            className="text-center p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-linear-to-br hover:from-blue-500/10 hover:to-blue-600/10 transition-all group cursor-pointer"
+                        >
+                            <div className="text-2xl font-bold text-blue-400 group-hover:text-blue-300 mb-2 transition-all">{stats.totalTasks}</div>
+                            <div className="text-gray-400 group-hover:text-gray-300 text-sm mt-1 font-medium transition-all">Total tasks</div>
                         </div>
+
                         <div className="text-center p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
                             <div className="text-2xl font-bold text-red-400">{stats.overdueTasks}</div>
                             <div className="text-gray-400 text-sm mt-1">Missed</div>
                         </div>
+
                         <div className="text-center p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
                             <div className="text-2xl font-bold text-purple-400">{stats.myTasks}</div>
                             <div className="text-gray-400 text-sm mt-1">My tasks</div>
                         </div>
                     </div>
+
                 </div>
 
                 <div className="grid lg:grid-cols-3 gap-8">
@@ -79,7 +88,8 @@ function Dashboard() {
                             My projects
                         </h3>
                         <div className="space-y-4">
-                            <div className="p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer">
+                            <div className="p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
+                                onClick={() => setActiveView('projects')}>
                                 <h4 className="font-semibold text-white mb-1">Vulcan</h4>
                                 <p className="text-gray-400 text-sm mb-2">Web application</p>
                                 <div className="flex gap-2">
