@@ -1,19 +1,40 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+    // Auth
+    Route::get('/user', fn(Request $r) => $r->user());
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Users (admin only)
     Route::post('/users', [UserController::class, 'store']);
+    Route::get('/users', [UserController::class, 'index']);
+
+    // Projects
+    Route::apiResource('projects', ProjectController::class);
+
+    // Tasks (global list + CRUD)
+    Route::get('/tasks', [TaskController::class, 'index']);
+    Route::post('/tasks', [TaskController::class, 'store']);
+    Route::get('/tasks/{task}', [TaskController::class, 'show']);
+    Route::put('/tasks/{task}', [TaskController::class, 'update']);
+    Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
+
+    // Comments on tasks
+    Route::get('/tasks/{task}/comments', [CommentController::class, 'index']);
+    Route::post('/tasks/{task}/comments', [CommentController::class, 'store']);
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 });

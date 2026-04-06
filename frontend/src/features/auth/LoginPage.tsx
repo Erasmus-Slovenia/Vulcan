@@ -23,51 +23,78 @@ function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-gray-900 to-[#006633] flex items-center justify-center p-4 text-white">
+        <div className="min-h-screen flex items-center justify-center p-4 text-white">
             <div className="w-full max-w-md">
-                <div className="bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 rounded-3xl p-8 shadow-2xl shadow-green-500/10">
-                    <div className="text-center mb-8">
-                        <h1 className="text-4xl font-bold bg-linear-to-r from-[#008F4D] to-[#006633] bg-clip-text text-transparent mb-2">
-                            Vulcan
-                        </h1>
-                        <p className="text-gray-400 text-sm">Welcome back. Sign in to your account.</p>
+                {/* Logo mark */}
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+                        style={{ background: 'linear-gradient(135deg, #9945FF, #14F195)', boxShadow: '0 0 40px rgba(153,69,255,0.4)' }}>
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <path d="M4 20L14 8L24 20" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M8 20H20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                        </svg>
                     </div>
-                    <form className="space-y-6" onSubmit={handleSubmit}>
+                    <h1 className="text-4xl font-bold gradient-text mb-1">Vulcan</h1>
+                    <p className="text-[#888] text-sm">Sign in to your workspace</p>
+                </div>
+
+                <div className="sol-card rounded-2xl p-8 glow-purple">
+                    <form className="space-y-5" onSubmit={handleSubmit}>
                         {error && (
-                            <div className="bg-red-500/10 border border-red-500/50 rounded-xl px-4 py-3 text-red-400 text-sm text-center">
+                            <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 text-red-400 text-sm text-center">
                                 {error}
                             </div>
                         )}
+
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                            <label className="block text-sm font-medium text-[#aaa] mb-2">Username</label>
                             <input
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-transparent transition-all duration-300"
+                                className="w-full px-4 py-3 rounded-xl text-white placeholder-[#555] focus:outline-none transition-all duration-200"
+                                style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(153,69,255,0.25)',
+                                }}
+                                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.7)')}
+                                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.25)')}
                                 required
                             />
                         </div>
+
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                            <label className="block text-sm font-medium text-[#aaa] mb-2">Password</label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-transparent transition-all duration-300"
+                                className="w-full px-4 py-3 rounded-xl text-white placeholder-[#555] focus:outline-none transition-all duration-200"
+                                style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(153,69,255,0.25)',
+                                }}
+                                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.7)')}
+                                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.25)')}
                                 placeholder="••••••••"
                                 required
                             />
                         </div>
+
                         <button
                             type="submit"
                             disabled={submitting}
-                            className="w-full bg-linear-to-r from-[#008F4D] to-[#006633] hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-4 rounded-xl focus:outline-none focus:ring-4 focus:ring-green-500/30 shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/40 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="glow-btn w-full text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                            style={{ background: 'linear-gradient(90deg, #9945FF, #14F195)' }}
                         >
-                            {submitting ? 'Signing in...' : 'Sign in'}
+                            {submitting ? 'Signing in…' : 'Sign in'}
                         </button>
                     </form>
                 </div>
+
+                <p className="text-center text-[#444] text-xs mt-6">
+                    Secured with Laravel Sanctum
+                </p>
             </div>
         </div>
     );
