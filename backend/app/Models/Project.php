@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Project extends Model
 {
-    protected $fillable = ['name', 'description', 'status'];
+    protected $fillable = ['name', 'description', 'status', 'user_id'];
+
+    protected $appends = ['tasks_count'];
 
     public function user(): BelongsTo
     {
@@ -18,5 +20,10 @@ class Project extends Model
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function getTasksCountAttribute(): int
+    {
+        return $this->tasks()->count();
     }
 }

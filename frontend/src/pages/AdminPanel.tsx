@@ -35,13 +35,7 @@ function AdminPanel() {
             })
 
             setCreateUserSuccess('User created successfully')
-            setNewUser({
-                name: '',
-                email: '',
-                password: '',
-                password_confirmation: '',
-                role: 'user',
-            })
+            setNewUser({ name: '', email: '', password: '', password_confirmation: '', role: 'user' })
         } catch (error) {
             setCreateUserError(error instanceof Error ? error.message : 'Failed to create user')
         } finally {
@@ -51,11 +45,13 @@ function AdminPanel() {
 
     if (user?.role !== 'admin') {
         return (
-            <div className="min-h-screen bg-linear-to-br from-gray-900 to-[#006633] p-8 text-white flex items-center justify-center">
-                <div className="text-center">
-                    <h1 className="text-4xl font-bold mb-4">403 - Forbidden</h1>
-                    <p className="mb-8">You do not have permission to access this page.</p>
-                    <Link to="/dashboard" className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-xl transition-all">
+            <div className="min-h-screen flex items-center justify-center text-white">
+                <div className="text-center sol-card rounded-2xl p-12">
+                    <div className="text-5xl font-bold gradient-text mb-4">403</div>
+                    <p className="text-[#888] mb-8">You don't have permission to access this page.</p>
+                    <Link to="/dashboard"
+                        className="glow-btn px-6 py-3 rounded-xl font-semibold text-white transition-all"
+                        style={{ background: 'linear-gradient(90deg, #9945FF, #14F195)' }}>
                         Back to Dashboard
                     </Link>
                 </div>
@@ -63,82 +59,111 @@ function AdminPanel() {
         )
     }
 
+    const inputStyle = {
+        background: 'rgba(255,255,255,0.05)',
+        border: '1px solid rgba(153,69,255,0.25)',
+    }
+
     return (
-        <div className="min-h-screen bg-linear-to-br from-gray-900 to-[#006633] p-8 text-white">
-            <nav className="backdrop-blur-xl bg-gray-800/30 border border-gray-700/50 rounded-3xl px-8 py-6 mb-8 shadow-2xl shadow-green-500/10 max-w-7xl mx-auto">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-8">
-                        <Link to="/dashboard" className="text-3xl font-bold bg-linear-to-r from-[#008F4D] to-[#006633] bg-clip-text text-transparent">
-                            Vulcan
-                        </Link>
-                        <span className="text-xl font-semibold text-gray-300">Admin Panel</span>
+        <div className="min-h-screen text-white">
+            {/* Top nav */}
+            <nav className="sticky top-0 z-50 border-b"
+                style={{ background: 'rgba(10,10,10,0.85)', backdropFilter: 'blur(20px)', borderColor: 'rgba(153,69,255,0.15)' }}>
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <Link to="/dashboard" className="text-2xl font-bold gradient-text">Vulcan</Link>
+                        <div className="flex items-center gap-2 text-[#555]">
+                            <span>/</span>
+                            <span className="text-sm font-medium text-[#aaa]">Admin Panel</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <span className="text-lg font-medium">
-                            {user?.name} <span className="text-green-400">({user?.role})</span>
-                        </span>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                                style={{ background: 'linear-gradient(135deg, #9945FF, #14F195)' }}>
+                                {user?.name?.[0]?.toUpperCase()}
+                            </div>
+                            <span className="text-sm text-[#ccc]">{user?.name}</span>
+                        </div>
                         <button
                             onClick={logout}
-                            className="text-sm bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white px-4 py-2 rounded-xl border border-gray-600/50 hover:border-green-500/50 transition-all duration-300"
-                        >
+                            className="text-sm px-4 py-2 rounded-lg text-[#888] hover:text-white transition-all"
+                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
                             Log out
                         </button>
                     </div>
                 </div>
             </nav>
 
-            <main className="max-w-7xl mx-auto space-y-8">
-                <div className="backdrop-blur-xl bg-gray-800/30 border border-gray-700/50 rounded-3xl p-8 shadow-2xl shadow-green-500/10">
-                    <h3 className="text-2xl font-semibold mb-6">Create new user</h3>
+            <main className="max-w-3xl mx-auto px-6 py-10">
+                <div className="mb-8">
+                    <h2 className="text-2xl font-bold text-white mb-1">Create User</h2>
+                    <p className="text-[#555] text-sm">Add a new member to your workspace</p>
+                </div>
 
+                <div className="sol-card rounded-2xl p-8" style={{ boxShadow: '0 0 40px rgba(153,69,255,0.1)' }}>
                     <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreateUser}>
                         {createUserError && (
-                            <div className="md:col-span-2 bg-red-500/10 border border-red-500/50 rounded-xl px-4 py-3 text-red-400 text-sm">
+                            <div className="md:col-span-2 bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 text-red-400 text-sm">
                                 {createUserError}
                             </div>
                         )}
-
                         {createUserSuccess && (
-                            <div className="md:col-span-2 bg-green-500/10 border border-green-500/50 rounded-xl px-4 py-3 text-green-400 text-sm">
+                            <div className="md:col-span-2 rounded-xl px-4 py-3 text-sm font-medium"
+                                style={{ color: '#14F195', background: 'rgba(20,241,149,0.08)', border: '1px solid rgba(20,241,149,0.3)' }}>
                                 {createUserSuccess}
                             </div>
                         )}
 
                         <input
-                            className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                            style={inputStyle}
+                            className="px-4 py-3 rounded-xl text-white placeholder-[#444] focus:outline-none transition-all"
                             placeholder="Name"
                             value={newUser.name}
-                            onChange={(e) => setNewUser((prev) => ({ ...prev, name: e.target.value }))}
+                            onChange={(e) => setNewUser(p => ({ ...p, name: e.target.value }))}
+                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.7)')}
+                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.25)')}
                             required
                         />
                         <input
-                            className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                            style={inputStyle}
+                            className="px-4 py-3 rounded-xl text-white placeholder-[#444] focus:outline-none transition-all"
                             placeholder="Email"
                             type="email"
                             value={newUser.email}
-                            onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))}
+                            onChange={(e) => setNewUser(p => ({ ...p, email: e.target.value }))}
+                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.7)')}
+                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.25)')}
                             required
                         />
                         <input
-                            className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                            style={inputStyle}
+                            className="px-4 py-3 rounded-xl text-white placeholder-[#444] focus:outline-none transition-all"
                             placeholder="Password"
                             type="password"
                             value={newUser.password}
-                            onChange={(e) => setNewUser((prev) => ({ ...prev, password: e.target.value }))}
+                            onChange={(e) => setNewUser(p => ({ ...p, password: e.target.value }))}
+                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.7)')}
+                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.25)')}
                             required
                         />
                         <input
-                            className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                            style={inputStyle}
+                            className="px-4 py-3 rounded-xl text-white placeholder-[#444] focus:outline-none transition-all"
                             placeholder="Confirm Password"
                             type="password"
                             value={newUser.password_confirmation}
-                            onChange={(e) => setNewUser((prev) => ({ ...prev, password_confirmation: e.target.value }))}
+                            onChange={(e) => setNewUser(p => ({ ...p, password_confirmation: e.target.value }))}
+                            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.7)')}
+                            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.25)')}
                             required
                         />
                         <select
-                            className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                            style={inputStyle}
+                            className="px-4 py-3 rounded-xl text-white focus:outline-none transition-all"
                             value={newUser.role}
-                            onChange={(e) => setNewUser((prev) => ({ ...prev, role: e.target.value }))}
+                            onChange={(e) => setNewUser(p => ({ ...p, role: e.target.value }))}
                         >
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
@@ -147,9 +172,10 @@ function AdminPanel() {
                         <button
                             type="submit"
                             disabled={creatingUser}
-                            className="md:col-span-2 bg-linear-to-r from-[#008F4D] to-[#006633] hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-4 rounded-xl focus:outline-none focus:ring-4 focus:ring-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="glow-btn md:col-span-2 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{ background: 'linear-gradient(90deg, #9945FF, #14F195)' }}
                         >
-                            {creatingUser ? 'Creating...' : 'Create user'}
+                            {creatingUser ? 'Creating…' : 'Create User'}
                         </button>
                     </form>
                 </div>

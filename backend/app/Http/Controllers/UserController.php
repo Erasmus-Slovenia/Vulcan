@@ -11,6 +11,17 @@ use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
+    public function index(Request $request): JsonResponse
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        return response()->json(
+            \App\Models\User::select('id', 'name', 'email', 'role')->orderBy('name')->get()
+        );
+    }
+
     public function store(Request $request): JsonResponse
     {
         if ($request->user()->role !== 'admin') {
