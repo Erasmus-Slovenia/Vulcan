@@ -1,1 +1,40 @@
 @import "tailwindcss";
+
+body {
+  background-color: #0a0a0a;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% -10%, rgba(153,69,255,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 110%, rgba(20,241,149,0.10) 0%, transparent 60%);
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(153,69,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(153,69,255,0.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root { position: relative; z-index: 1; }
+
+.gradient-text {
+  background: linear-gradient(90deg, #9945FF, #14F195);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sol-card {
+  background: rgba(19,17,28,0.80);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(153,69,255,0.18);
+}
+
+.glow-btn:hover {
+  box-shadow: 0 0 28px rgba(153,69,255,0.45), 0 4px 16px rgba(20,241,149,0.15);
+}

@@ -1,161 +1,177 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
+import { usersApi, type User } from '../lib/api'
+import Layout from '../components/Layout'
 import { useAuth } from '../context/AuthContext'
-import { api } from '../lib/api'
-import { Link } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 
-function AdminPanel() {
-    const { user, logout } = useAuth()
-    const [newUser, setNewUser] = useState({
-        name: '',
-        email: '',
-        password: '',
-        password_confirmation: '',
-        role: 'user',
-    })
-    const [creatingUser, setCreatingUser] = useState(false)
-    const [createUserError, setCreateUserError] = useState('')
-    const [createUserSuccess, setCreateUserSuccess] = useState('')
+const IS = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(153,69,255,0.25)' }
 
-    async function handleCreateUser(e: FormEvent) {
-        e.preventDefault()
-        setCreateUserError('')
-        setCreateUserSuccess('')
+const EMPTY = { name: '', email: '', password: '', password_confirmation: '', role: 'user' }
 
-        if (newUser.password !== newUser.password_confirmation) {
-            setCreateUserError('Passwords do not match')
-            return
-        }
+export default function AdminPanel() {
+  const { user } = useAuth()
+  const [users, setUsers]     = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [form, setForm]       = useState(EMPTY)
+  const [saving, setSaving]   = useState(false)
+  const [error, setError]     = useState('')
+  const [success, setSuccess] = useState('')
+  const [deleteId, setDeleteId] = useState<number | null>(null)
 
-        setCreatingUser(true)
+  if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />
 
-        try {
-            await api('/users', {
-                method: 'POST',
-                body: JSON.stringify(newUser),
-            })
+  useEffect(() => { usersApi.list().then(setUsers).finally(() => setLoading(false)) }, [])
 
-            setCreateUserSuccess('User created successfully')
-            setNewUser({
-                name: '',
-                email: '',
-                password: '',
-                password_confirmation: '',
-                role: 'user',
-            })
-        } catch (error) {
-            setCreateUserError(error instanceof Error ? error.message : 'Failed to create user')
-        } finally {
-            setCreatingUser(false)
-        }
-    }
+  async function handleCreate(e: FormEvent) {
+    e.preventDefault(); setSaving(true); setError(''); setSuccess('')
+    if (form.password !== form.password_confirmation) { setError('Passwords do not match'); setSaving(false); return }
+    try {
+      const u = await usersApi.create(form as Parameters<typeof usersApi.create>[0])
+      setUsers(prev => [...prev, u])
+      setForm(EMPTY)
+      setSuccess(`User "${u.name}" created successfully.`)
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed') }
+    finally { setSaving(false) }
+  }
 
-    if (user?.role !== 'admin') {
-        return (
-            <div className="min-h-screen bg-linear-to-br from-gray-900 to-[#006633] p-8 text-white flex items-center justify-center">
-                <div className="text-center">
-                    <h1 className="text-4xl font-bold mb-4">403 - Forbidden</h1>
-                    <p className="mb-8">You do not have permission to access this page.</p>
-                    <Link to="/dashboard" className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-xl transition-all">
-                        Back to Dashboard
-                    </Link>
-                </div>
-            </div>
-        )
-    }
+  async function handleDelete(id: number) {
+    await usersApi.remove(id)
+    setUsers(prev => prev.filter(u => u.id !== id))
+    setDeleteId(null)
+  }
 
-    return (
-        <div className="min-h-screen bg-linear-to-br from-gray-900 to-[#006633] p-8 text-white">
-            <nav className="backdrop-blur-xl bg-gray-800/30 border border-gray-700/50 rounded-3xl px-8 py-6 mb-8 shadow-2xl shadow-green-500/10 max-w-7xl mx-auto">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-8">
-                        <Link to="/dashboard" className="text-3xl font-bold bg-linear-to-r from-[#008F4D] to-[#006633] bg-clip-text text-transparent">
-                            Vulcan
-                        </Link>
-                        <span className="text-xl font-semibold text-gray-300">Admin Panel</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <span className="text-lg font-medium">
-                            {user?.name} <span className="text-green-400">({user?.role})</span>
-                        </span>
-                        <button
-                            onClick={logout}
-                            className="text-sm bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white px-4 py-2 rounded-xl border border-gray-600/50 hover:border-green-500/50 transition-all duration-300"
-                        >
-                            Log out
-                        </button>
-                    </div>
-                </div>
-            </nav>
+  const roleColor = (role: string) =>
+    role === 'admin'
+      ? { color: '#9945FF', bg: 'rgba(153,69,255,0.1)' }
+      : { color: '#14F195', bg: 'rgba(20,241,149,0.1)' }
 
-            <main className="max-w-7xl mx-auto space-y-8">
-                <div className="backdrop-blur-xl bg-gray-800/30 border border-gray-700/50 rounded-3xl p-8 shadow-2xl shadow-green-500/10">
-                    <h3 className="text-2xl font-semibold mb-6">Create new user</h3>
-
-                    <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreateUser}>
-                        {createUserError && (
-                            <div className="md:col-span-2 bg-red-500/10 border border-red-500/50 rounded-xl px-4 py-3 text-red-400 text-sm">
-                                {createUserError}
-                            </div>
-                        )}
-
-                        {createUserSuccess && (
-                            <div className="md:col-span-2 bg-green-500/10 border border-green-500/50 rounded-xl px-4 py-3 text-green-400 text-sm">
-                                {createUserSuccess}
-                            </div>
-                        )}
-
-                        <input
-                            className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"
-                            placeholder="Name"
-                            value={newUser.name}
-                            onChange={(e) => setNewUser((prev) => ({ ...prev, name: e.target.value }))}
-                            required
-                        />
-                        <input
-                            className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"
-                            placeholder="Email"
-                            type="email"
-                            value={newUser.email}
-                            onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))}
-                            required
-                        />
-                        <input
-                            className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"
-                            placeholder="Password"
-                            type="password"
-                            value={newUser.password}
-                            onChange={(e) => setNewUser((prev) => ({ ...prev, password: e.target.value }))}
-                            required
-                        />
-                        <input
-                            className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50"
-                            placeholder="Confirm Password"
-                            type="password"
-                            value={newUser.password_confirmation}
-                            onChange={(e) => setNewUser((prev) => ({ ...prev, password_confirmation: e.target.value }))}
-                            required
-                        />
-                        <select
-                            className="px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-green-500/50"
-                            value={newUser.role}
-                            onChange={(e) => setNewUser((prev) => ({ ...prev, role: e.target.value }))}
-                        >
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
-                        </select>
-
-                        <button
-                            type="submit"
-                            disabled={creatingUser}
-                            className="md:col-span-2 bg-linear-to-r from-[#008F4D] to-[#006633] hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-4 rounded-xl focus:outline-none focus:ring-4 focus:ring-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {creatingUser ? 'Creating...' : 'Create user'}
-                        </button>
-                    </form>
-                </div>
-            </main>
+  return (
+    <Layout>
+      <div className="max-w-5xl mx-auto px-6 py-10 space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold mb-1">Admin Panel</h1>
+          <p className="text-[#555] text-sm">Manage workspace users</p>
         </div>
-    )
-}
 
-export default AdminPanel
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Create user form */}
+          <div className="sol-card rounded-2xl p-6" style={{ boxShadow: '0 0 40px rgba(153,69,255,0.1)' }}>
+            <h2 className="text-lg font-semibold mb-5">Create User</h2>
+            <form onSubmit={handleCreate} className="space-y-3">
+              {error   && <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 text-red-400 text-sm">{error}</div>}
+              {success && <div className="rounded-xl px-4 py-3 text-sm font-medium" style={{ color: '#14F195', background: 'rgba(20,241,149,0.08)', border: '1px solid rgba(20,241,149,0.3)' }}>{success}</div>}
+
+              {(['name','email'] as const).map(f => (
+                <div key={f}>
+                  <label className="block text-xs font-medium text-[#888] mb-1.5 capitalize">{f}</label>
+                  <input type={f === 'email' ? 'email' : 'text'} style={IS}
+                    className="w-full px-4 py-2.5 rounded-xl text-white text-sm focus:outline-none"
+                    value={form[f]} onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))}
+                    onFocus={e => (e.currentTarget.style.borderColor='rgba(153,69,255,0.7)')}
+                    onBlur={e => (e.currentTarget.style.borderColor='rgba(153,69,255,0.25)')}
+                    required />
+                </div>
+              ))}
+
+              <div>
+                <label className="block text-xs font-medium text-[#888] mb-1.5">Password</label>
+                <input type="password" style={IS}
+                  className="w-full px-4 py-2.5 rounded-xl text-white text-sm focus:outline-none"
+                  value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                  onFocus={e => (e.currentTarget.style.borderColor='rgba(153,69,255,0.7)')}
+                  onBlur={e => (e.currentTarget.style.borderColor='rgba(153,69,255,0.25)')}
+                  required />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#888] mb-1.5">Confirm Password</label>
+                <input type="password" style={IS}
+                  className="w-full px-4 py-2.5 rounded-xl text-white text-sm focus:outline-none"
+                  value={form.password_confirmation} onChange={e => setForm(p => ({ ...p, password_confirmation: e.target.value }))}
+                  onFocus={e => (e.currentTarget.style.borderColor='rgba(153,69,255,0.7)')}
+                  onBlur={e => (e.currentTarget.style.borderColor='rgba(153,69,255,0.25)')}
+                  required />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#888] mb-1.5">Role</label>
+                <select style={IS} className="w-full px-4 py-2.5 rounded-xl text-white text-sm focus:outline-none"
+                  value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))}>
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              <button type="submit" disabled={saving}
+                className="glow-btn w-full py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50 mt-2"
+                style={{ background: 'linear-gradient(90deg,#9945FF,#14F195)' }}>
+                {saving ? 'Creating…' : 'Create User'}
+              </button>
+            </form>
+          </div>
+
+          {/* User list */}
+          <div className="sol-card rounded-2xl p-6">
+            <h2 className="text-lg font-semibold mb-5">All Users ({users.length})</h2>
+            {loading ? (
+              <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-12 rounded-xl bg-white/5 animate-pulse" />)}</div>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                {users.map(u => (
+                  <div key={u.id} className="flex items-center justify-between p-3 rounded-xl"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{ background: 'linear-gradient(135deg,#9945FF,#14F195)' }}>
+                        {u.name[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-white">{u.name}</div>
+                        <div className="text-xs text-[#555]">{u.email}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                        style={roleColor(u.role)}>
+                        {u.role}
+                      </span>
+                      {u.id !== user?.id && (
+                        <button onClick={() => setDeleteId(u.id)}
+                          className="text-xs text-red-400 hover:text-red-300 transition-all">✕</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Delete confirm */}
+      {deleteId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setDeleteId(null)}>
+          <div className="sol-card rounded-2xl p-8 w-full max-w-sm text-center"
+            style={{ boxShadow: '0 0 60px rgba(255,107,107,0.15)' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="text-4xl mb-4">⚠</div>
+            <h2 className="text-lg font-bold mb-2">Delete User?</h2>
+            <p className="text-[#666] text-sm mb-6">This cannot be undone.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteId(null)}
+                className="flex-1 py-3 rounded-xl text-sm text-[#888]"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                Cancel
+              </button>
+              <button onClick={() => handleDelete(deleteId)}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white"
+                style={{ background: 'rgba(255,107,107,0.2)', border: '1px solid rgba(255,107,107,0.4)' }}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Layout>
+  )
+}

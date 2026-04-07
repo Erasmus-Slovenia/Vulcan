@@ -1,138 +1,147 @@
-import { useState } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { projectsApi, tasksApi, type Project, type Task } from '../lib/api'
+import Layout from '../components/Layout'
 
-interface Stats {
-    activeProjects: number
-    totalTasks: number
-    overdueTasks: number
-    myTasks: number
+const S_COLOR: Record<string, { color: string; bg: string }> = {
+  todo:        { color: '#00C2FF', bg: 'rgba(0,194,255,0.1)' },
+  in_progress: { color: '#f0a500', bg: 'rgba(240,165,0,0.1)' },
+  done:        { color: '#14F195', bg: 'rgba(20,241,149,0.1)' },
 }
+const S_LABEL: Record<string, string> = { todo: 'Pending', in_progress: 'In Progress', done: 'Completed' }
+const P_COLOR: Record<string, string> = { high: '#FF6B6B', medium: '#f0a500', low: '#14F195' }
 
-function Dashboard() {
-    const { user, logout } = useAuth()
-    const [stats] = useState<Stats>({
-        activeProjects: 3,
-        totalTasks: 15,
-        overdueTasks: 2,
-        myTasks: 5
-    })
-    const [, setActiveView] = useState<'dashboard' | 'projects' | 'tasks'>('dashboard')
-    const [] = useState(null)
+export default function Dashboard() {
+  const { user } = useAuth()
+  const [projects, setProjects] = useState<Project[]>([])
+  const [tasks, setTasks]       = useState<Task[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [taskFilter, setTaskFilter] = useState('all')
 
-    return (
-        <div className="min-h-screen bg-linear-to-br from-gray-900 to-[#006633] p-8 text-white">
-            <nav className="backdrop-blur-xl bg-gray-800/30 border border-gray-700/50 rounded-3xl px-8 py-6 mb-8 shadow-2xl shadow-green-500/10 max-w-7xl mx-auto">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold bg-linear-to-r from-[#008F4D] to-[#006633] bg-clip-text text-transparent">
-                        Vulcan
-                    </h1>
-                    <div className="flex items-center gap-4">
-                        {user?.role === 'admin' && (
-                            <Link
-                                to="/admin"
-                                className="text-sm bg-green-600/20 hover:bg-green-600/40 text-green-400 px-4 py-2 rounded-xl border border-green-500/30 transition-all duration-300"
-                            >
-                                Admin Panel
-                            </Link>
-                        )}
-                        <span className="text-lg font-medium">
-                            {user?.name} <span className="text-green-400">({user?.role})</span>
-                        </span>
-                        <button
-                            onClick={logout}
-                            className="text-sm bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white px-4 py-2 rounded-xl border border-gray-600/50 hover:border-green-500/50 transition-all duration-300"
-                        >
-                            Log out
-                        </button>
-                    </div>
-                </div>
-            </nav>
+  useEffect(() => {
+    Promise.all([projectsApi.list(), tasksApi.list()])
+      .then(([p, t]) => { setProjects(p); setTasks(t) })
+      .finally(() => setLoading(false))
+  }, [])
 
-            <main className="max-w-7xl mx-auto space-y-8">
-                <div className="backdrop-blur-xl bg-gray-800/30 border border-gray-700/50 rounded-3xl p-8 shadow-2xl shadow-green-500/10">
-                    <h2 className="text-3xl font-bold mb-4">Welcome, {user?.name}</h2>
-                    <p className="text-gray-400 text-lg mb-8">Your dashboard - overview of your projects and tasks</p>
+  const activeProjects = projects.filter(p => p.status === 'active').length
+  const pendingTasks   = tasks.filter(t => t.status === 'todo').length
+  const overdueTasks   = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done').length
+  const myTasks        = tasks.filter(t => t.users.some(u => u.id === user?.id)).length
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div className="text-center p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
-                            <div className="text-2xl font-bold text-green-400">{stats.activeProjects}</div>
-                            <div className="text-gray-400 text-sm mt-1">Active projects</div>
-                        </div>
+  const filtered = taskFilter === 'all' ? tasks : tasks.filter(t => t.status === taskFilter)
 
-                        <div
-                            onClick={() => setActiveView('tasks')}
-                            className="text-center p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-linear-to-br hover:from-blue-500/10 hover:to-blue-600/10 transition-all group cursor-pointer"
-                        >
-                            <div className="text-2xl font-bold text-blue-400 group-hover:text-blue-300 mb-2 transition-all">{stats.totalTasks}</div>
-                            <div className="text-gray-400 group-hover:text-gray-300 text-sm mt-1 font-medium transition-all">Total tasks</div>
-                        </div>
+  const Skeleton = () => <div className="h-4 rounded bg-white/5 animate-pulse" />
 
-                        <div className="text-center p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
-                            <div className="text-2xl font-bold text-red-400">{stats.overdueTasks}</div>
-                            <div className="text-gray-400 text-sm mt-1">Missed</div>
-                        </div>
-
-                        <div className="text-center p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
-                            <div className="text-2xl font-bold text-purple-400">{stats.myTasks}</div>
-                            <div className="text-gray-400 text-sm mt-1">My tasks</div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div className="grid lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-1 backdrop-blur-xl bg-gray-800/30 border border-gray-700/50 rounded-3xl p-8 shadow-2xl shadow-green-500/10">
-                        <h3 className="text-2xl font-semibold mb-6 flex items-center gap-3">
-                            <div className="w-2 h-8 bg-linear-to-b from-[#008F4D] to-[#006633] rounded-full"></div>
-                            My projects
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
-                                onClick={() => setActiveView('projects')}>
-                                <h4 className="font-semibold text-white mb-1">Vulcan</h4>
-                                <p className="text-gray-400 text-sm mb-2">Web application</p>
-                                <div className="flex gap-2">
-                                    <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">Active</span>
-                                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs">12 tasks</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="lg:col-span-2 backdrop-blur-xl bg-gray-800/30 border border-gray-700/50 rounded-3xl p-8 shadow-2xl shadow-green-500/10">
-                        <div className="flex flex-wrap gap-3 mb-8">
-                            <h3 className="text-2xl font-semibold flex-1">Tasks</h3>
-                            <select className="bg-white/10 border border-white/20 text-white px-4 py-2 rounded-xl text-sm focus:ring-2 focus:ring-green-500/50">
-                                <option>All</option>
-                                <option>Open</option>
-                                <option>In progress</option>
-                            </select>
-                        </div>
-
-                        <div className="space-y-4 max-h-96 overflow-y-auto">
-                            <div className="p-6 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all group">
-                                <div className="flex gap-4 items-start">
-                                    <div className="shrink-0 w-2 h-12 bg-red-500 rounded-full mt-1"></div>
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="font-semibold text-white mb-1 truncate">Dokončaj specifikacijo API-ja</h4>
-                                        <p className="text-gray-400 text-sm mb-2">Vulcan</p>
-                                        <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
-                                            <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded-full">High</span>
-                                            <span>29.3.2026</span>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <span className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-xs">In progress</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
+  return (
+    <Layout>
+      <div className="max-w-7xl mx-auto px-6 py-10 space-y-8">
+        <div>
+          <h2 className="text-3xl font-bold mb-1">
+            Welcome back, <span className="gradient-text">{user?.name}</span>
+          </h2>
+          <p className="text-[#555] text-sm">Here's what's happening across your projects.</p>
         </div>
-    )
-}
 
-export default Dashboard
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Active Projects', value: activeProjects, color: '#9945FF', glow: 'rgba(153,69,255,0.25)' },
+            { label: 'Pending Tasks',   value: pendingTasks,   color: '#14F195', glow: 'rgba(20,241,149,0.2)' },
+            { label: 'Overdue',         value: overdueTasks,   color: '#FF6B6B', glow: 'rgba(255,107,107,0.2)' },
+            { label: 'Assigned to Me',  value: myTasks,        color: '#00C2FF', glow: 'rgba(0,194,255,0.2)' },
+          ].map(({ label, value, color, glow }) => (
+            <div key={label} className="sol-card rounded-2xl p-6 transition-all hover:scale-[1.02]"
+              style={{ boxShadow: `0 0 30px ${glow}` }}>
+              {loading
+                ? <div className="h-8 w-10 rounded bg-white/10 animate-pulse mb-1" />
+                : <div className="text-3xl font-bold mb-1" style={{ color }}>{value}</div>}
+              <div className="text-[#666] text-sm">{label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Projects */}
+          <div className="sol-card rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-1 h-6 rounded-full" style={{ background: 'linear-gradient(180deg,#9945FF,#14F195)' }} />
+              <h3 className="text-lg font-semibold">My Projects</h3>
+            </div>
+            {loading
+              ? [1,2].map(i => <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse mb-3" />)
+              : projects.length === 0
+                ? <div className="text-center py-8 text-[#444] text-sm">
+                    No projects yet — <Link to="/projects" className="underline" style={{ color: '#9945FF' }}>create one</Link>
+                  </div>
+                : projects.slice(0, 5).map(p => (
+                    <Link key={p.id} to={`/projects/${p.id}`}
+                      className="block p-3 rounded-xl mb-2 transition-all hover:scale-[1.01]"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(153,69,255,0.12)' }}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-white">{p.name}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full"
+                          style={{ color: p.status === 'active' ? '#14F195' : '#9945FF', background: p.status === 'active' ? 'rgba(20,241,149,0.1)' : 'rgba(153,69,255,0.1)' }}>
+                          {p.status}
+                        </span>
+                      </div>
+                      <span className="text-xs mt-1 block" style={{ color: '#00C2FF' }}>{p.tasks_count} tasks</span>
+                    </Link>
+                  ))}
+            <Link to="/projects" className="mt-3 flex items-center gap-1 text-xs font-medium hover:opacity-80" style={{ color: '#9945FF' }}>
+              View all →
+            </Link>
+          </div>
+
+          {/* Tasks */}
+          <div className="lg:col-span-2 sol-card rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-6 rounded-full" style={{ background: 'linear-gradient(180deg,#9945FF,#14F195)' }} />
+                <h3 className="text-lg font-semibold">Tasks</h3>
+              </div>
+              <select value={taskFilter} onChange={e => setTaskFilter(e.target.value)}
+                className="text-sm px-3 py-1.5 rounded-lg text-[#aaa] focus:outline-none"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <option value="all">All</option>
+                <option value="todo">Pending</option>
+                <option value="in_progress">In Progress</option>
+                <option value="done">Completed</option>
+              </select>
+            </div>
+            <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+              {loading
+                ? [1,2,3].map(i => <div key={i}><Skeleton /></div>)
+                : filtered.length === 0
+                  ? <div className="text-center py-12 text-[#444] text-sm">No tasks found</div>
+                  : filtered.slice(0, 10).map(task => {
+                      const s = S_COLOR[task.status]
+                      const overdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done'
+                      return (
+                        <div key={task.id} className="p-3 rounded-xl transition-all hover:scale-[1.005]"
+                          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                          <div className="flex gap-3 items-center">
+                            <div className="shrink-0 w-1 h-8 rounded-full" style={{ background: P_COLOR[task.priority] }} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-medium text-white truncate">{task.title}</span>
+                                <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: s?.color, background: s?.bg }}>{S_LABEL[task.status]}</span>
+                                {task.due_date && <span className={`text-xs ${overdue ? 'text-red-400' : 'text-[#555]'}`}>{task.due_date}</span>}
+                              </div>
+                              <span className="text-xs text-[#555]">{task.project.name}{task.users.length > 0 && ` · ${task.users.map(u => u.name).join(', ')}`}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+            </div>
+            <Link to="/tasks" className="mt-3 flex items-center gap-1 text-xs font-medium hover:opacity-80" style={{ color: '#9945FF' }}>
+              View all tasks →
+            </Link>
+          </div>
+        </div>
+      </div>
+    </Layout>
+  )
+}
