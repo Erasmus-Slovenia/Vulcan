@@ -11,10 +11,11 @@ class TaskController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        // Only return tasks belonging to the authenticated user's projects
-        $query = Task::whereHas('project', fn($q) => $q->where('user_id', $request->user()->id))
-            ->with(['project:id,name', 'users:id,name'])
-            ->latest();
+        $query = Task::with(['project:id,name', 'users:id,name'])->latest();
+
+        if (!$request->user()->isAdmin()) {
+            $query->whereHas('project', fn($q) => $q->where('user_id', $request->user()->id));
+        }
 
         if ($request->filled('project_id')) {
             $query->where('project_id', $request->project_id);
@@ -24,6 +25,19 @@ class TaskController extends Controller
         }
         if ($request->filled('priority')) {
             $query->where('priority', $request->priority);
+        }
+        if ($request->filled('user_id')) {
+            $query->whereHas('users', fn($q) => $q->where('users.id', $request->user_id));
+        }
+
+        $sort = $request->get('sort', 'created_at');
+        $dir  = $request->get('dir', 'desc');
+        if (in_array($sort, ['created_at', 'due_date', 'priority'])) {
+            if ($sort === 'priority') {
+                $query->orderByRaw("CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END " . ($dir === 'asc' ? 'ASC' : 'DESC'));
+            } else {
+                $query->orderBy($sort, $dir === 'asc' ? 'asc' : 'desc');
+            }
         }
 
         return response()->json($query->get());
@@ -36,13 +50,12 @@ class TaskController extends Controller
             'description' => 'nullable|string',
             'status'      => 'sometimes|string|in:todo,in_progress,done',
             'priority'    => 'sometimes|string|in:low,medium,high',
-            'due_date'    => 'nullable|date',
+            'due_date'    => 'nullable|date|after_or_equal:today',
             'project_id'  => 'required|integer|exists:projects,id',
-            'assignee_ids' => 'nullable|array',
-            'assignee_ids.*' => 'integer|exists:users,id',
+            'user_ids'    => 'nullable|array',
+            'user_ids.*'  => 'integer|exists:users,id',
         ]);
 
-        // Verify project belongs to user
         $project = Project::findOrFail($validated['project_id']);
         if ($project->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -57,19 +70,16 @@ class TaskController extends Controller
             'project_id'  => $validated['project_id'],
         ]);
 
-        if (!empty($validated['assignee_ids'])) {
-            $task->users()->sync($validated['assignee_ids']);
+        if (!empty($validated['user_ids'])) {
+            $task->users()->sync($validated['user_ids']);
         }
 
-        return response()->json(
-            $task->load(['project:id,name', 'users:id,name']),
-            201
-        );
+        return response()->json($task->load(['project:id,name', 'users:id,name']), 201);
     }
 
     public function show(Request $request, Task $task): JsonResponse
     {
-        $this->authorizeTask($request, $task);
+        $this->gate($request, $task);
 
         return response()->json(
             $task->load(['project:id,name', 'users:id,name', 'comments.user:id,name'])
@@ -78,45 +88,43 @@ class TaskController extends Controller
 
     public function update(Request $request, Task $task): JsonResponse
     {
-        $this->authorizeTask($request, $task);
+        $this->gate($request, $task);
 
         $validated = $request->validate([
-            'title'        => 'sometimes|string|max:255',
-            'description'  => 'nullable|string',
-            'status'       => 'sometimes|string|in:todo,in_progress,done',
-            'priority'     => 'sometimes|string|in:low,medium,high',
-            'due_date'     => 'nullable|date',
-            'project_id'   => 'sometimes|integer|exists:projects,id',
-            'assignee_ids' => 'nullable|array',
-            'assignee_ids.*' => 'integer|exists:users,id',
+            'title'       => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'status'      => 'sometimes|string|in:todo,in_progress,done',
+            'priority'    => 'sometimes|string|in:low,medium,high',
+            'due_date'    => 'nullable|date',
+            'project_id'  => 'sometimes|integer|exists:projects,id',
+            'user_ids'    => 'nullable|array',
+            'user_ids.*'  => 'integer|exists:users,id',
         ]);
 
-        $task->update(array_filter($validated, fn($v, $k) => $k !== 'assignee_ids', ARRAY_FILTER_USE_BOTH));
-
-        if (array_key_exists('assignee_ids', $validated)) {
-            $task->users()->sync($validated['assignee_ids'] ?? []);
+        if (($validated['status'] ?? null) === 'done' && $task->project->status === 'archived') {
+            return response()->json(['message' => 'Cannot complete a task in an archived project.'], 422);
         }
 
-        return response()->json(
-            $task->load(['project:id,name', 'users:id,name'])
-        );
+        $task->update(array_diff_key($validated, ['user_ids' => true]));
+
+        if (array_key_exists('user_ids', $validated)) {
+            $task->users()->sync($validated['user_ids'] ?? []);
+        }
+
+        return response()->json($task->load(['project:id,name', 'users:id,name']));
     }
 
     public function destroy(Request $request, Task $task): JsonResponse
     {
-        $this->authorizeTask($request, $task);
-
+        $this->gate($request, $task);
         $task->delete();
 
         return response()->json(['message' => 'Task deleted']);
     }
 
-    private function authorizeTask(Request $request, Task $task): void
+    private function gate(Request $request, Task $task): void
     {
-        if (
-            $task->project->user_id !== $request->user()->id &&
-            !$request->user()->isAdmin()
-        ) {
+        if ($task->project->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
             abort(403, 'Unauthorized');
         }
     }

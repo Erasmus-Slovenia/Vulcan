@@ -10,8 +10,6 @@ class Project extends Model
 {
     protected $fillable = ['name', 'description', 'status', 'user_id'];
 
-    protected $appends = ['tasks_count'];
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -22,8 +20,8 @@ class Project extends Model
         return $this->hasMany(Task::class);
     }
 
-    public function getTasksCountAttribute(): int
+    public function hasActiveTasks(): bool
     {
-        return $this->tasks()->count();
+        return $this->tasks()->whereIn('status', ['todo', 'in_progress'])->exists();
     }
 }

@@ -5,133 +5,98 @@ let authToken: string | null = localStorage.getItem(TOKEN_KEY);
 
 export function setToken(token: string | null) {
   authToken = token;
-  if (token) {
-    localStorage.setItem(TOKEN_KEY, token);
-  } else {
-    localStorage.removeItem(TOKEN_KEY);
-  }
+  token ? localStorage.setItem(TOKEN_KEY, token) : localStorage.removeItem(TOKEN_KEY);
 }
 
-export function getToken(): string | null {
-  return authToken;
-}
+export function getToken() { return authToken; }
 
 export async function api<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
-    ...options.headers as Record<string, string>,
+    ...(options.headers as Record<string, string>),
   };
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
+  const res = await fetch(`${API_URL}/api${endpoint}`, { ...options, headers });
+
+  if (res.status === 401) { setToken(null); window.location.href = '/login'; throw new Error('Unauthenticated'); }
+  if (res.status === 204)  return null as T;
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: 'Request failed' }));
+    if (err.errors) throw new Error((Object.values(err.errors).flat()[0] as string) || err.message);
+    throw new Error(err.message || 'Request failed');
   }
 
-  const response = await fetch(`${API_URL}/api${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (response.status === 401) {
-    setToken(null);
-    window.location.href = '/login';
-    throw new Error('Unauthenticated');
-  }
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }));
-    if (error.errors) {
-      const messages = Object.values(error.errors).flat();
-      throw new Error((messages[0] as string) || error.message || 'Request failed');
-    }
-    throw new Error(error.message || 'Request failed');
-  }
-
-  // 204 No Content
-  if (response.status === 204) return null as T;
-
-  return response.json();
+  return res.json();
 }
 
-// ─── Typed helpers ────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+export interface User { id: number; name: string; email: string; role: string; }
 
 export interface Project {
-  id: number;
-  name: string;
-  description: string | null;
-  status: 'active' | 'paused' | 'done';
-  user_id: number;
-  tasks_count: number;
-  created_at: string;
+  id: number; name: string; description: string | null;
+  status: 'active' | 'archived'; user_id: number;
+  tasks_count: number; created_at: string;
 }
 
-export interface TaskUser {
-  id: number;
-  name: string;
-}
+export interface TaskUser { id: number; name: string; }
 
 export interface Task {
-  id: number;
-  title: string;
-  description: string | null;
+  id: number; title: string; description: string | null;
   status: 'todo' | 'in_progress' | 'done';
   priority: 'low' | 'medium' | 'high';
-  due_date: string | null;
-  project_id: number;
+  due_date: string | null; project_id: number;
   project: { id: number; name: string };
   users: TaskUser[];
   created_at: string;
 }
 
 export interface Comment {
-  id: number;
-  content: string;
-  task_id: number;
-  user_id: number;
-  user: { id: number; name: string };
-  created_at: string;
+  id: number; content: string; task_id: number; user_id: number;
+  user: { id: number; name: string }; created_at: string;
 }
 
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-}
+// ── API helpers ────────────────────────────────────────────────────────────────
 
-// Projects
-export const projectsApi = {
-  list: () => api<Project[]>('/projects'),
-  create: (data: Partial<Project>) => api<Project>('/projects', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: number, data: Partial<Project>) => api<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  remove: (id: number) => api<void>(`/projects/${id}`, { method: 'DELETE' }),
+export const profileApi = {
+  update: (data: { name?: string; email?: string; current_password?: string; password?: string; password_confirmation?: string }) =>
+    api<User>('/profile', { method: 'PUT', body: JSON.stringify(data) }),
 };
 
-// Tasks
+export const projectsApi = {
+  list:   ()                        => api<Project[]>('/projects'),
+  create: (d: Partial<Project>)     => api<Project>('/projects', { method: 'POST', body: JSON.stringify(d) }),
+  update: (id: number, d: Partial<Project>) => api<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
+  remove: (id: number)              => api<void>(`/projects/${id}`, { method: 'DELETE' }),
+  show:   (id: number)              => api<Project & { tasks: Task[] }>(`/projects/${id}`),
+};
+
+export interface TaskFilters { project_id?: number; status?: string; priority?: string; user_id?: number; sort?: string; dir?: string; }
 export const tasksApi = {
-  list: (params?: { project_id?: number; status?: string; priority?: string }) => {
+  list: (f: TaskFilters = {}) => {
     const q = new URLSearchParams();
-    if (params?.project_id) q.set('project_id', String(params.project_id));
-    if (params?.status) q.set('status', params.status);
-    if (params?.priority) q.set('priority', params.priority);
+    Object.entries(f).forEach(([k, v]) => v !== undefined && v !== '' && v !== 0 && q.set(k, String(v)));
     return api<Task[]>(`/tasks${q.toString() ? '?' + q : ''}`);
   },
-  create: (data: Partial<Task> & { assignee_ids?: number[] }) =>
-    api<Task>('/tasks', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: number, data: Partial<Task> & { assignee_ids?: number[] }) =>
-    api<Task>(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  create: (d: Omit<Partial<Task>, 'users'> & { user_ids?: number[] }) =>
+    api<Task>('/tasks', { method: 'POST', body: JSON.stringify(d) }),
+  update: (id: number, d: Omit<Partial<Task>, 'users'> & { user_ids?: number[] }) =>
+    api<Task>(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
   remove: (id: number) => api<void>(`/tasks/${id}`, { method: 'DELETE' }),
 };
 
-// Comments
 export const commentsApi = {
-  list: (taskId: number) => api<Comment[]>(`/tasks/${taskId}/comments`),
-  create: (taskId: number, content: string) =>
-    api<Comment>(`/tasks/${taskId}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),
-  remove: (commentId: number) => api<void>(`/comments/${commentId}`, { method: 'DELETE' }),
+  list:   (taskId: number)                   => api<Comment[]>(`/tasks/${taskId}/comments`),
+  create: (taskId: number, content: string)  => api<Comment>(`/tasks/${taskId}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),
+  remove: (id: number)                       => api<void>(`/comments/${id}`, { method: 'DELETE' }),
 };
 
-// Users (admin)
 export const usersApi = {
-  list: () => api<User[]>('/users'),
+  list:   ()                => api<User[]>('/users'),
+  create: (d: Partial<User> & { password: string; password_confirmation: string }) =>
+    api<User>('/users', { method: 'POST', body: JSON.stringify(d) }),
+  remove: (id: number)      => api<void>(`/users/${id}`, { method: 'DELETE' }),
 };

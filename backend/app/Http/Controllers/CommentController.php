@@ -11,7 +11,7 @@ class CommentController extends Controller
 {
     public function index(Request $request, Task $task): JsonResponse
     {
-        $this->authorizeTask($request, $task);
+        $this->gateTask($request, $task);
 
         return response()->json(
             $task->comments()->with('user:id,name')->latest()->get()
@@ -20,7 +20,7 @@ class CommentController extends Controller
 
     public function store(Request $request, Task $task): JsonResponse
     {
-        $this->authorizeTask($request, $task);
+        $this->gateTask($request, $task);
 
         $validated = $request->validate([
             'content' => 'required|string|max:2000',
@@ -31,10 +31,7 @@ class CommentController extends Controller
             'user_id' => $request->user()->id,
         ]);
 
-        return response()->json(
-            $comment->load('user:id,name'),
-            201
-        );
+        return response()->json($comment->load('user:id,name'), 201);
     }
 
     public function destroy(Request $request, Comment $comment): JsonResponse
@@ -48,10 +45,11 @@ class CommentController extends Controller
         return response()->json(['message' => 'Comment deleted']);
     }
 
-    private function authorizeTask(Request $request, Task $task): void
+    private function gateTask(Request $request, Task $task): void
     {
         if (
             $task->project->user_id !== $request->user()->id &&
+            $task->assignee_id !== $request->user()->id &&
             !$request->user()->isAdmin()
         ) {
             abort(403, 'Unauthorized');
