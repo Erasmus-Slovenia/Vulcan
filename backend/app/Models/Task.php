@@ -32,9 +32,4 @@ class Task extends Model
     {
         return $this->hasMany(Comment::class);
     }
-
-    public function comments(): HasMany
-    {
-        return $this->hasMany(Comment::class);
-    }
 }
