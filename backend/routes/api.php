@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CommentController;
-use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
@@ -11,8 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
-Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:5,1');
-Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:5,1');
 
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
 
@@ -27,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Users (admin)
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
+    Route::put('/users/{user}/password', [UserController::class, 'resetPassword']);
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
     // Projects
