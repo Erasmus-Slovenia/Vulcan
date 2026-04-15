@@ -12,9 +12,13 @@ class ProjectController extends Controller
     {
         $query = Project::withCount('tasks')->latest();
 
-        // Admins see all projects; regular users see only their own
+        // Admins see all projects; regular users see their own + projects they're assigned to
         if (!$request->user()->isAdmin()) {
-            $query->where('user_id', $request->user()->id);
+            $userId = $request->user()->id;
+            $query->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->orWhereHas('tasks.users', fn($sq) => $sq->where('users.id', $userId));
+            });
         }
 
         return response()->json($query->get());
@@ -43,7 +47,13 @@ class ProjectController extends Controller
 
     public function show(Request $request, Project $project): JsonResponse
     {
-        $this->gate($request, $project);
+        // Users can view a project they own OR are assigned to a task in
+        if (!$request->user()->isAdmin()
+            && $project->user_id !== $request->user()->id
+            && !$project->tasks()->whereHas('users', fn($q) => $q->where('users.id', $request->user()->id))->exists()
+        ) {
+            abort(403, 'Unauthorized');
+        }
 
         return response()->json(
             $project->load(['tasks.users:id,name', 'user:id,name'])->loadCount('tasks')
