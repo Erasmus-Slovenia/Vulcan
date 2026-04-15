@@ -1,19 +1,19 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: mysql:8.0
     container_name: vulcan-db
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports: ["${DB_PORT}:5432"]
-    volumes: [postgres_data:/var/lib/postgresql/data]
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports: ["${DB_PORT}:3306"]
+    volumes: [mysql_data:/var/lib/mysql]
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
       interval: 10s
       timeout: 5s
       retries: 5
-
 
   backend:
     build:
@@ -22,12 +22,12 @@ services:
     container_name: vulcan-backend
     ports: ["${BACKEND_PORT}:8000"]
     environment:
-      DB_CONNECTION: pgsql
+      DB_CONNECTION: mysql
       DB_HOST: db
-      DB_PORT: ${DB_PORT:-5432}
-      DB_DATABASE: ${POSTGRES_DB:-vulcan}
-      DB_USERNAME: ${POSTGRES_USER:-vulcan_user}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-vulcan123}
+      DB_PORT: 3306
+      DB_DATABASE: ${MYSQL_DATABASE:-vulcan}
+      DB_USERNAME: ${MYSQL_USER:-vulcan_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-vulcan123}
       APP_URL: http://localhost:${BACKEND_PORT:-8000}
       SESSION_DRIVER: file
     volumes:
@@ -42,6 +42,18 @@ services:
       timeout: 10s
       retries: 3
 
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: vulcan-phpmyadmin
+    ports: ["${PMA_PORT:-8080}:80"]
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+
   frontend:
     build:
       context: .
@@ -50,12 +62,12 @@ services:
     ports: ["${FRONTEND_PORT}:5173"]
     environment:
       VITE_API_URL: http://localhost:${BACKEND_PORT:-8000}
-    volumes: 
+    volumes:
       - ./frontend:/app:cached
       - /app/node_modules
     depends_on:
       - backend
 
 volumes:
-  postgres_data:
-    name: vulcan-postgres_data
+  mysql_data:
+    name: vulcan-mysql_data
