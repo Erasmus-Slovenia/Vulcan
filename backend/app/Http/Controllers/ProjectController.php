@@ -22,6 +22,10 @@ class ProjectController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if (!$request->user()->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $validated = $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -42,7 +46,7 @@ class ProjectController extends Controller
         $this->gate($request, $project);
 
         return response()->json(
-            $project->load(['tasks.assignee:id,name', 'user:id,name'])->loadCount('tasks')
+            $project->load(['tasks.users:id,name', 'user:id,name'])->loadCount('tasks')
         );
     }
 
