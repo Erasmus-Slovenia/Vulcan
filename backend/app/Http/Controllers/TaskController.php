@@ -95,7 +95,7 @@ class TaskController extends Controller
             'description' => 'nullable|string',
             'status'      => 'sometimes|string|in:todo,in_progress,done',
             'priority'    => 'sometimes|string|in:low,medium,high',
-            'due_date'    => 'nullable|date',
+            'due_date'    => 'nullable|date|after_or_equal:today',
             'project_id'  => 'sometimes|integer|exists:projects,id',
             'user_ids'    => 'nullable|array',
             'user_ids.*'  => 'integer|exists:users,id',
