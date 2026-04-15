@@ -100,3 +100,10 @@ export const usersApi = {
     api<User>('/users', { method: 'POST', body: JSON.stringify(d) }),
   remove: (id: number)      => api<void>(`/users/${id}`, { method: 'DELETE' }),
 };
+
+export const passwordResetApi = {
+  forgot: (email: string) =>
+    api<{ message: string; token: string }>('/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  reset: (email: string, token: string, password: string, password_confirmation: string) =>
+    api<{ message: string }>('/reset-password', { method: 'POST', body: JSON.stringify({ email, token, password, password_confirmation }) }),
+};

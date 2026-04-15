@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './features/auth/LoginPage'
+import ForgotPasswordPage from './features/auth/ForgotPasswordPage'
+import ResetPasswordPage from './features/auth/ResetPasswordPage'
 import Dashboard from './pages/Dashboard'
 import AdminPanel from './pages/AdminPanel'
 import ProjectsPage from './pages/ProjectsPage'
@@ -29,7 +31,9 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/login"           element={<Public><LoginPage /></Public>} />
+          <Route path="/login"             element={<Public><LoginPage /></Public>} />
+          <Route path="/forgot-password"  element={<Public><ForgotPasswordPage /></Public>} />
+          <Route path="/reset-password"   element={<Public><ResetPasswordPage /></Public>} />
           <Route path="/dashboard"       element={<Protected><Dashboard /></Protected>} />
           <Route path="/projects"        element={<Protected><ProjectsPage /></Protected>} />
           <Route path="/projects/:id"    element={<Protected><ProjectDetailPage /></Protected>} />

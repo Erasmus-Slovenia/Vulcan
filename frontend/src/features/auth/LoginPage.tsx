@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function LoginPage() {
@@ -54,6 +55,11 @@ export default function LoginPage() {
                 onFocus={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.7)')}
                 onBlur={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.25)')}
                 required />
+            </div>
+            <div className="flex justify-end">
+              <Link to="/forgot-password" className="text-xs hover:opacity-80 transition-all" style={{ color: '#9945FF' }}>
+                Forgot password?
+              </Link>
             </div>
             <button type="submit" disabled={submitting}
               className="glow-btn w-full text-white font-semibold py-3 rounded-xl transition-all hover:-translate-y-0.5 disabled:opacity-50 mt-2"

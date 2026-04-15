@@ -47,9 +47,11 @@ class CommentController extends Controller
 
     private function gateTask(Request $request, Task $task): void
     {
+        $userId = $request->user()->id;
+
         if (
-            $task->project->user_id !== $request->user()->id &&
-            $task->assignee_id !== $request->user()->id &&
+            $task->project->user_id !== $userId &&
+            !$task->users()->where('users.id', $userId)->exists() &&
             !$request->user()->isAdmin()
         ) {
             abort(403, 'Unauthorized');

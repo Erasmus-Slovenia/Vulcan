@@ -353,11 +353,9 @@ export default function TasksPage() {
       {/* Create / Edit modal */}
       {modal.mode !== 'closed' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
-          onClick={() => setModal({ mode: 'closed' })}>
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
           <div className="sol-card rounded-2xl p-8 w-full max-w-lg"
-            style={{ boxShadow: '0 0 60px rgba(153,69,255,0.2)' }}
-            onClick={e => e.stopPropagation()}>
+            style={{ boxShadow: '0 0 60px rgba(153,69,255,0.2)' }}>
             <h2 className="text-xl font-bold mb-6">{modal.mode === 'create' ? 'New Task' : 'Edit Task'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               {formErr && <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 text-red-400 text-sm">{formErr}</div>}

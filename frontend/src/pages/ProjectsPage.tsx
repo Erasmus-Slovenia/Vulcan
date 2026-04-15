@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { projectsApi, type Project } from '../lib/api'
 import Layout from '../components/Layout'
+import { useAuth } from '../context/AuthContext'
 
 type Modal = { mode: 'closed' } | { mode: 'create' } | { mode: 'edit'; project: Project }
 const EMPTY = { name: '', description: '', status: 'active' as Project['status'] }
@@ -13,6 +14,8 @@ const SC: Record<string, { color: string; bg: string }> = {
 }
 
 export default function ProjectsPage() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading]   = useState(true)
   const [modal, setModal]       = useState<Modal>({ mode: 'closed' })
@@ -61,11 +64,13 @@ export default function ProjectsPage() {
             <h1 className="text-3xl font-bold mb-1">Projects</h1>
             <p className="text-[#555] text-sm">Manage your projects</p>
           </div>
-          <button onClick={openCreate}
-            className="glow-btn px-5 py-2.5 rounded-xl font-semibold text-sm text-white"
-            style={{ background: 'linear-gradient(90deg,#9945FF,#14F195)' }}>
-            + New Project
-          </button>
+          {isAdmin && (
+            <button onClick={openCreate}
+              className="glow-btn px-5 py-2.5 rounded-xl font-semibold text-sm text-white"
+              style={{ background: 'linear-gradient(90deg,#9945FF,#14F195)' }}>
+              + New Project
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -75,10 +80,12 @@ export default function ProjectsPage() {
         ) : projects.length === 0 ? (
           <div className="text-center py-24 sol-card rounded-2xl">
             <p className="text-[#444] mb-4">No projects yet.</p>
-            <button onClick={openCreate} className="glow-btn px-5 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ background: 'linear-gradient(90deg,#9945FF,#14F195)' }}>
-              Create your first project
-            </button>
+            {isAdmin && (
+              <button onClick={openCreate} className="glow-btn px-5 py-2 rounded-xl text-sm font-semibold text-white"
+                style={{ background: 'linear-gradient(90deg,#9945FF,#14F195)' }}>
+                Create your first project
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
