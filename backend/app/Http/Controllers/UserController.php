@@ -49,6 +49,21 @@ class UserController extends Controller
         return response()->json($user->only(['id', 'name', 'email', 'role']), 201);
     }
 
+    public function resetPassword(Request $request, User $user): JsonResponse
+    {
+        if (!$request->user()->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $user->update(['password' => Hash::make($request->password)]);
+
+        return response()->json(['message' => 'Password updated successfully.']);
+    }
+
     public function destroy(Request $request, User $user): JsonResponse
     {
         if (!$request->user()->isAdmin()) {

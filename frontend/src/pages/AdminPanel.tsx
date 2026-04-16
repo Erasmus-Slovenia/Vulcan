@@ -6,6 +6,7 @@ import { Navigate } from 'react-router-dom'
 
 const IS = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(153,69,255,0.25)' }
 const EMPTY = { name: '', email: '', password: '', password_confirmation: '', role: 'user' }
+const EMPTY_RESET = { password: '', password_confirmation: '' }
 
 export default function AdminPanel() {
   const { user } = useAuth()
@@ -16,6 +17,11 @@ export default function AdminPanel() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [resetUser, setResetUser] = useState<User | null>(null)
+  const [resetForm, setResetForm] = useState(EMPTY_RESET)
+  const [resetSaving, setResetSaving] = useState(false)
+  const [resetError, setResetError] = useState('')
+  const [resetSuccess, setResetSuccess] = useState('')
 
   useEffect(() => {
     usersApi.list().then(setUsers).finally(() => setLoading(false))
@@ -44,6 +50,27 @@ export default function AdminPanel() {
       setError(err instanceof Error ? err.message : 'Failed')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (!resetUser) return
+    setResetError('')
+    setResetSuccess('')
+    if (resetForm.password !== resetForm.password_confirmation) {
+      setResetError('Passwords do not match')
+      return
+    }
+    setResetSaving(true)
+    try {
+      await usersApi.resetPassword(resetUser.id, resetForm.password, resetForm.password_confirmation)
+      setResetSuccess(`Password for "${resetUser.name}" updated successfully.`)
+      setResetForm(EMPTY_RESET)
+    } catch (err) {
+      setResetError(err instanceof Error ? err.message : 'Failed')
+    } finally {
+      setResetSaving(false)
     }
   }
 
@@ -180,6 +207,12 @@ export default function AdminPanel() {
                       <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={roleColor(u.role)}>
                         {u.role}
                       </span>
+                            <button
+                                onClick={() => { setResetUser(u); setResetForm(EMPTY_RESET); setResetError(''); setResetSuccess('') }}
+                                className="text-xs font-medium hover:opacity-80 transition-all"
+                                style={{ color: '#9945FF' }}>
+                              Reset pwd
+                            </button>
                             {u.id !== user?.id && (
                                 <button onClick={() => setDeleteId(u.id)} className="text-xs text-red-400 hover:text-red-300 transition-all">
                                   ✕
@@ -193,6 +226,67 @@ export default function AdminPanel() {
             </div>
           </div>
         </div>
+
+        {resetUser !== null && (
+            <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+                onClick={() => setResetUser(null)}
+            >
+              <div
+                  className="sol-card rounded-2xl p-8 w-full max-w-sm"
+                  style={{ boxShadow: '0 0 60px rgba(153,69,255,0.2)' }}
+                  onClick={e => e.stopPropagation()}
+              >
+                <h2 className="text-lg font-bold mb-1">Reset Password</h2>
+                <p className="text-[#555] text-sm mb-5">Setting new password for <span className="text-white font-medium">{resetUser.name}</span></p>
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  {resetError && <div className="bg-red-500/10 border border-red-500/40 rounded-xl px-4 py-3 text-red-400 text-sm">{resetError}</div>}
+                  {resetSuccess && <div className="rounded-xl px-4 py-3 text-sm font-medium" style={{ color: '#14F195', background: 'rgba(20,241,149,0.08)', border: '1px solid rgba(20,241,149,0.3)' }}>{resetSuccess}</div>}
+                  <div>
+                    <label className="block text-xs font-medium text-[#888] mb-1.5">New Password</label>
+                    <input
+                        type="password"
+                        autoComplete="new-password"
+                        style={IS}
+                        className="w-full px-4 py-2.5 rounded-xl text-white text-sm focus:outline-none"
+                        value={resetForm.password}
+                        onChange={e => setResetForm(p => ({ ...p, password: e.target.value }))}
+                        onFocus={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.7)')}
+                        onBlur={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.25)')}
+                        required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#888] mb-1.5">Confirm Password</label>
+                    <input
+                        type="password"
+                        autoComplete="new-password"
+                        style={IS}
+                        className="w-full px-4 py-2.5 rounded-xl text-white text-sm focus:outline-none"
+                        value={resetForm.password_confirmation}
+                        onChange={e => setResetForm(p => ({ ...p, password_confirmation: e.target.value }))}
+                        onFocus={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.7)')}
+                        onBlur={e => (e.currentTarget.style.borderColor = 'rgba(153,69,255,0.25)')}
+                        required
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-1">
+                    <button type="button" onClick={() => setResetUser(null)}
+                        className="flex-1 py-2.5 rounded-xl text-sm text-[#888] hover:text-white transition-all"
+                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={resetSaving}
+                        className="flex-1 glow-btn py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+                        style={{ background: 'linear-gradient(90deg,#9945FF,#14F195)' }}>
+                      {resetSaving ? 'Saving…' : 'Set Password'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+        )}
 
         {deleteId !== null && (
             <div

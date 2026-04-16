@@ -14,7 +14,11 @@ class TaskController extends Controller
         $query = Task::with(['project:id,name', 'users:id,name'])->latest();
 
         if (!$request->user()->isAdmin()) {
-            $query->whereHas('project', fn($q) => $q->where('user_id', $request->user()->id));
+            $userId = $request->user()->id;
+            $query->where(function ($q) use ($userId) {
+                $q->whereHas('project', fn($sq) => $sq->where('user_id', $userId))
+                  ->orWhereHas('users', fn($sq) => $sq->where('users.id', $userId));
+            });
         }
 
         if ($request->filled('project_id')) {

@@ -32,8 +32,6 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login"             element={<Public><LoginPage /></Public>} />
-          <Route path="/forgot-password"  element={<Public><ForgotPasswordPage /></Public>} />
-          <Route path="/reset-password"   element={<Public><ResetPasswordPage /></Public>} />
           <Route path="/dashboard"       element={<Protected><Dashboard /></Protected>} />
           <Route path="/projects"        element={<Protected><ProjectsPage /></Protected>} />
           <Route path="/projects/:id"    element={<Protected><ProjectDetailPage /></Protected>} />

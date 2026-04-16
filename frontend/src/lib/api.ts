@@ -98,6 +98,8 @@ export const usersApi = {
   list:   ()                => api<User[]>('/users'),
   create: (d: Partial<User> & { password: string; password_confirmation: string }) =>
     api<User>('/users', { method: 'POST', body: JSON.stringify(d) }),
+  resetPassword: (id: number, password: string, password_confirmation: string) =>
+    api<{ message: string }>(`/users/${id}/password`, { method: 'PUT', body: JSON.stringify({ password, password_confirmation }) }),
   remove: (id: number)      => api<void>(`/users/${id}`, { method: 'DELETE' }),
 };
 

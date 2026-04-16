@@ -73,7 +73,9 @@ export default function Dashboard() {
               ? [1,2].map(i => <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse mb-3" />)
               : projects.length === 0
                 ? <div className="text-center py-8 text-[#444] text-sm">
-                    No projects yet — <Link to="/projects" className="underline" style={{ color: '#9945FF' }}>create one</Link>
+                    {user?.role === 'admin'
+                      ? <>No projects yet — <Link to="/projects" className="underline" style={{ color: '#9945FF' }}>create one</Link></>
+                      : 'No projects yet'}
                   </div>
                 : projects.slice(0, 5).map(p => (
                     <Link key={p.id} to={`/projects/${p.id}`}
