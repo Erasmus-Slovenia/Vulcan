@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './features/auth/LoginPage'
+import ForgotPasswordPage from './features/auth/ForgotPasswordPage'
+import ResetPasswordPage from './features/auth/ResetPasswordPage'
 import Dashboard from './pages/Dashboard'
 import AdminPanel from './pages/AdminPanel'
 import ProjectsPage from './pages/ProjectsPage'
