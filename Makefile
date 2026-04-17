@@ -10,7 +10,8 @@ up:
 	@echo "🚀 Starting Vulcan stack..."
 	docker compose up -d --build
 	@echo "⏳ Waiting for backend and database to be ready..."
-	@until docker compose exec -T backend sh -c "php artisan key:generate --force --quiet && php artisan migrate --seed --force" 2>/dev/null; do sleep 3; done
+	@until docker compose exec -T backend sh -c "php artisan key:generate --force --quiet && php artisan migrate --seed --force" > /dev/null 2>&1; do sleep 3; done
+	@echo "✅ Migrations complete"
 	@echo ""
 	@echo "✅ Frontend:   http://localhost:$${FRONTEND_PORT:-5173}"
 	@echo "✅ Backend:    http://localhost:$${BACKEND_PORT:-8000}"
