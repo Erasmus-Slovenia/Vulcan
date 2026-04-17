@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Project;
 use App\Models\Task;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,13 +12,6 @@ class TaskController extends Controller
     {
         $query = Task::with(['project:id,name', 'users:id,name'])->latest();
 
-        if (!$request->user()->isAdmin()) {
-            $userId = $request->user()->id;
-            $query->where(function ($q) use ($userId) {
-                $q->whereHas('project', fn($sq) => $sq->where('user_id', $userId))
-                  ->orWhereHas('users', fn($sq) => $sq->where('users.id', $userId));
-            });
-        }
 
         if ($request->filled('project_id')) {
             $query->where('project_id', $request->project_id);
@@ -60,11 +52,6 @@ class TaskController extends Controller
             'user_ids.*'  => 'integer|exists:users,id',
         ]);
 
-        $project = Project::findOrFail($validated['project_id']);
-        if ($project->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         $task = Task::create([
             'title'       => $validated['title'],
             'description' => $validated['description'] ?? null,
@@ -83,8 +70,6 @@ class TaskController extends Controller
 
     public function show(Request $request, Task $task): JsonResponse
     {
-        $this->gate($request, $task);
-
         return response()->json(
             $task->load(['project:id,name', 'users:id,name', 'comments.user:id,name'])
         );
@@ -92,8 +77,6 @@ class TaskController extends Controller
 
     public function update(Request $request, Task $task): JsonResponse
     {
-        $this->gate($request, $task);
-
         $validated = $request->validate([
             'title'       => 'sometimes|string|max:255',
             'description' => 'nullable|string',
@@ -120,16 +103,10 @@ class TaskController extends Controller
 
     public function destroy(Request $request, Task $task): JsonResponse
     {
-        $this->gate($request, $task);
         $task->delete();
 
         return response()->json(['message' => 'Task deleted']);
     }
 
-    private function gate(Request $request, Task $task): void
-    {
-        if ($task->project->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
-            abort(403, 'Unauthorized');
-        }
-    }
+
 }
