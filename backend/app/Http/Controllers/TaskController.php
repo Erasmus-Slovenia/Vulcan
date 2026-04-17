@@ -39,7 +39,7 @@ class TaskController extends Controller
         $dir  = $request->get('dir', 'desc');
         if (in_array($sort, ['created_at', 'due_date', 'priority'])) {
             if ($sort === 'priority') {
-                $query->orderByRaw("CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END " . ($dir === 'asc' ? 'ASC' : 'DESC'));
+                $query->orderByRaw("CASE priority WHEN 'low' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END " . ($dir === 'asc' ? 'ASC' : 'DESC'));
             } else {
                 $query->orderBy($sort, $dir === 'asc' ? 'asc' : 'desc');
             }
@@ -64,6 +64,10 @@ class TaskController extends Controller
         $project = Project::findOrFail($validated['project_id']);
         if ($project->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($project->status === 'archived') {
+            return response()->json(['message' => 'Cannot create a task in an archived project.'], 422);
         }
 
         $task = Task::create([
