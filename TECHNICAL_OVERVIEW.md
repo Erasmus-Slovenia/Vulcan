@@ -33,7 +33,7 @@ Key capabilities:
 | Routing | React Router DOM | 7.13 |
 | Backend Framework | Laravel | 13 |
 | Backend Language | PHP | 8.4 |
-| Database | PostgreSQL | 16 |
+| Database | MySQL | 8.0 |
 | Auth Library | Laravel Sanctum | (token-based) |
 | Containerization | Docker + Docker Compose | — |
 
@@ -47,12 +47,12 @@ Browser (localhost:5173)
         │  HTTP/JSON  (Authorization: Bearer <token>)
         ▼
 ┌──────────────────┐        ┌──────────────────┐        ┌──────────────────┐
-│  React Frontend  │◄──────►│  Laravel Backend │◄──────►│   PostgreSQL DB  │
-│  (Vite / Node)   │        │  (PHP artisan)   │        │  (port 5432)     │
+│  React Frontend  │◄──────►│  Laravel Backend │◄──────►│    MySQL DB      │
+│  (Vite / Node)   │        │  (PHP artisan)   │        │  (port 3306)     │
 │  port 5173       │        │  port 8000       │        │                  │
 └──────────────────┘        └──────────────────┘        └──────────────────┘
 
-All three services run in isolated Docker containers on a shared internal network.
+All services run in isolated Docker containers on a shared internal network.
 ```
 
 ### Container Services
@@ -61,11 +61,12 @@ All three services run in isolated Docker containers on a shared internal networ
 |---|---|---|---|
 | `vulcan-frontend` | Node 22 Alpine | 5173 | Serves Vite dev server |
 | `vulcan-backend` | PHP 8.4 Alpine | 8000 | Runs Laravel API |
-| `vulcan-db` | PostgreSQL 16 Alpine | 5432 | Persistent data store |
+| `vulcan-db` | MySQL 8.0 | 3306 | Persistent data store |
+| `vulcan-phpmyadmin` | phpMyAdmin | 8080 | Database web UI |
 
 Start the full stack with one command:
 ```bash
-docker compose up
+make up
 ```
 
 ---
@@ -91,7 +92,7 @@ Base URL: `http://localhost:8000/api`
 ### Authentication
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/login` | Email + password → returns Bearer token |
+| POST | `/login` | Username + password → returns Bearer token |
 | POST | `/logout` | Invalidates current token |
 | GET | `/user` | Returns authenticated user object |
 | PUT | `/profile` | Update name, email, or password |
@@ -100,7 +101,7 @@ Base URL: `http://localhost:8000/api`
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/projects` | List projects (admins see all, users see own) |
-| POST | `/projects` | Create project |
+| POST | `/projects` | Create project (admin only) |
 | GET | `/projects/:id` | Project detail with tasks and assignees |
 | PUT | `/projects/:id` | Update project |
 | DELETE | `/projects/:id` | Delete (blocked if active tasks exist) |
@@ -171,7 +172,7 @@ Base URL: `http://localhost:8000/api`
 - **Many-to-many task assignment** — tasks are linked to users through a `task_user` pivot table, allowing a single task to be assigned to multiple team members simultaneously
 - **Cascade deletes** — deleting a project cascades to its tasks and their comments
 - **Active task guard** — projects cannot be deleted while they have tasks in `todo` or `in_progress` status (returns HTTP 422)
-- **Archived project guard** — new tasks cannot be marked complete in an archived project
+- **Archived project guard** — tasks cannot be created in or marked complete in an archived project
 
 ---
 
@@ -180,14 +181,14 @@ Base URL: `http://localhost:8000/api`
 **Mechanism:** Laravel Sanctum token authentication (stateless API)
 
 **Login flow:**
-1. User submits credentials to `POST /api/login`
+1. User submits username + password to `POST /api/login`
 2. Backend validates against bcrypt-hashed password
 3. Returns a personal access token (stored in `personal_access_tokens` table)
 4. Frontend stores token in `localStorage`, sends it as `Authorization: Bearer <token>` on all API requests
 
 **Authorization levels:**
 - **Unauthenticated** — login only
-- **Authenticated user** — manage own projects and tasks, view assigned tasks
+- **Authenticated user** — manage own projects and tasks, view/edit assigned tasks
 - **Admin** — full access to all projects, all tasks, user management
 
 **Security measures:**
@@ -225,7 +226,8 @@ Admins have access to a dedicated user management page where they can create new
 
 ```
 Vulcan/
-├── compose.yaml              # Docker Compose (3 services)
+├── compose.yaml              # Docker Compose (4 services)
+├── Makefile                  # Developer shortcuts (make up, make reset, etc.)
 ├── docker/
 │   ├── Dockerfile.backend    # PHP 8.4 + Composer + Laravel serve
 │   └── Dockerfile.frontend   # Node 22 + Vite dev server
@@ -253,18 +255,20 @@ Vulcan/
 **Prerequisites:** Docker and Docker Compose installed.
 
 ```bash
-# Clone and start
 git clone <repo>
 cd Vulcan
-docker compose up
-
-# Frontend:  http://localhost:5173
-# Backend:   http://localhost:8000
-# API Health: http://localhost:8000/api/health
+make up
 ```
 
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8000 |
+| phpMyAdmin | http://localhost:8080 |
+| API Health | http://localhost:8000/api/health |
+
 Default credentials (seeded on first run):
-| Email | Password | Role |
+
+| Username | Password | Role |
 |---|---|---|
-| admin@example.com | password | admin |
-| user@example.com | password | user |
+| Admin | password | admin |
