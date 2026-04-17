@@ -31,7 +31,7 @@ class ProjectController extends Controller
         }
 
         $validated = $request->validate([
-            'name'        => 'required|string|max:255',
+            'name'        => 'required|string|max:255|unique:projects,name',
             'description' => 'nullable|string',
             'status'      => 'sometimes|string|in:active,archived',
         ]);
@@ -65,7 +65,7 @@ class ProjectController extends Controller
         $this->gate($request, $project);
 
         $validated = $request->validate([
-            'name'        => 'sometimes|string|max:255',
+            'name'        => 'sometimes|string|max:255|unique:projects,name,' . $project->id,
             'description' => 'nullable|string',
             'status'      => 'sometimes|string|in:active,archived',
         ]);
