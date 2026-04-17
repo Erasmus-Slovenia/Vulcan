@@ -96,7 +96,7 @@ function UserMultiSelect({ users, selected, onChange }: {
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl max-h-60 overflow-y-auto"
+        <div className="absolute z-50 bottom-full mb-1 w-full rounded-xl max-h-60 overflow-y-auto"
           style={{ background: '#13111C', border: '1px solid rgba(153,69,255,0.3)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
           {users.length === 0
             ? <div className="px-4 py-3 text-sm text-[#444]">No users available</div>
