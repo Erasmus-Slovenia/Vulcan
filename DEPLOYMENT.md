@@ -122,7 +122,7 @@ ufw enable
 | phpMyAdmin | http://your-server-ip:8080       |
 
 Default admin credentials:
-- **Email:** admin@vulcan.com
+- **Username:** Admin
 - **Password:** password
 
 > Change the admin password immediately after first login.
