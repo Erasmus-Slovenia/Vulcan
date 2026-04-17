@@ -2,18 +2,21 @@
 
 # Default
 all: up
-	@echo "⏳ Waiting for backend..."
-	@until docker compose exec backend php artisan migrate --force 2>/dev/null; do sleep 2; done
-	@echo "✅ Migrations complete"
 
-# Start everything (build + run)
+# Start everything (build + run), auto-setup on first clone
 up:
+	@[ -f .env ] || cp .env.example .env
+	@[ -f backend/.env ] || cp backend/.env.example backend/.env
 	@echo "🚀 Starting Vulcan stack..."
 	docker compose up -d --build
-	@sleep 5
-	@echo "✅ Frontend: http://localhost:5173"
-	@echo "✅ Backend:  http://localhost:8000" 
-	@echo "✅ DB:       localhost:5432"
+	@echo "⏳ Waiting for backend to be ready..."
+	@until docker compose exec -T backend php artisan --version > /dev/null 2>&1; do sleep 2; done
+	@docker compose exec -T backend php artisan key:generate --ansi --force
+	@docker compose exec -T backend php artisan migrate --seed --force
+	@echo ""
+	@echo "✅ Frontend:   http://localhost:$${FRONTEND_PORT:-5173}"
+	@echo "✅ Backend:    http://localhost:$${BACKEND_PORT:-8000}"
+	@echo "✅ phpMyAdmin: http://localhost:$${PMA_PORT:-8080}"
 
 # Stop everything
 down:
