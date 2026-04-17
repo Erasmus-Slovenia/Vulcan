@@ -10,7 +10,7 @@ class TaskController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Task::with(['project:id,name', 'users:id,name'])->latest();
+        $query = Task::with(['project:id,name', 'users:id,name']);
 
 
         if ($request->filled('project_id')) {
