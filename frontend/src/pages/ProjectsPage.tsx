@@ -135,8 +135,7 @@ export default function ProjectsPage() {
       {/* Create/Edit modal */}
       {modal.mode !== 'closed' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
-          onClick={() => setModal({ mode: 'closed' })}>
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
           <div className="sol-card rounded-2xl p-8 w-full max-w-md"
             style={{ boxShadow: '0 0 60px rgba(153,69,255,0.2)' }}
             onClick={e => e.stopPropagation()}>
