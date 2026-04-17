@@ -76,14 +76,19 @@ function UserMultiSelect({ users, selected, onChange }: {
         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(153,69,255,0.25)' }}>
         {selectedUsers.length === 0
           ? <span className="text-[#444]">Unassigned</span>
-          : <div className="flex items-center gap-1 flex-wrap">
-              {selectedUsers.map(u => (
-                <span key={u.id} className="text-xs px-2 py-0.5 rounded-full font-medium"
-                  style={{ color: '#9945FF', background: 'rgba(153,69,255,0.15)' }}>
-                  {u.name}
-                </span>
-              ))}
-            </div>
+          : selectedUsers.length <= 2
+            ? <div className="flex items-center gap-1 flex-wrap">
+                {selectedUsers.map(u => (
+                  <span key={u.id} className="text-xs px-2 py-0.5 rounded-full font-medium"
+                    style={{ color: '#9945FF', background: 'rgba(153,69,255,0.15)' }}>
+                    {u.name}
+                  </span>
+                ))}
+              </div>
+            : <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                style={{ color: '#9945FF', background: 'rgba(153,69,255,0.15)' }}>
+                {selectedUsers.length} assignees
+              </span>
         }
         <svg className={`w-4 h-4 text-[#555] shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -91,7 +96,7 @@ function UserMultiSelect({ users, selected, onChange }: {
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl overflow-hidden max-h-60 overflow-y-auto"
+        <div className="absolute z-50 bottom-full mb-1 w-full rounded-xl max-h-60 overflow-y-auto"
           style={{ background: '#13111C', border: '1px solid rgba(153,69,255,0.3)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
           {users.length === 0
             ? <div className="px-4 py-3 text-sm text-[#444]">No users available</div>
